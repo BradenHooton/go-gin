@@ -1,7 +1,7 @@
 package domain
 
 // customer represents data about a record customer.
-type customer struct {
+type Customer struct {
     ID     string  `json:"id"`
     Name  string  `json:"name"`
     Email string  `json:"email"`

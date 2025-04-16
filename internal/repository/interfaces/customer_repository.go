@@ -2,7 +2,7 @@ package interfaces
 
 import (
     "context"
-    "github.com/your-project/internal/domain"
+    "go-gin/internal/domain"    
 )
 
 // CustomerRepository defines the contract for customer data operations

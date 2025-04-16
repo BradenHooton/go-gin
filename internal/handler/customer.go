@@ -1,35 +1,49 @@
-// getCustomers responds with the list of all customers as JSON.
-func getCustomers(c *gin.Context) {
-    c.IndentedJSON(http.StatusOK, customers)
+// internal/handler/customer.go
+package handler
+
+import (
+    "github.com/gin-gonic/gin"
+    "go-gin/internal/domain"
+    "go-gin/internal/repository/memory"
+)
+
+type CustomerHandler struct {
+    repo *memory.CustomerRepository  // Direct repository dependency
 }
 
-// postCustomers adds a customer from JSON received in the request body.
-func postCustomers(c *gin.Context) {
-    var newCustomer customer
+func NewCustomerHandler(repo *memory.CustomerRepository) *CustomerHandler {
+    return &CustomerHandler{
+        repo: repo,
+    }
+}
 
-    // Call BindJSON to bind the received JSON to
-    // newCustomer.
-    if err := c.BindJSON(&newCustomer); err != nil {
+// Handler methods using repository directly
+func (h *CustomerHandler) GetCustomers(c *gin.Context) {
+    customers := h.repo.GetAll()
+    c.JSON(200, customers)
+}
+
+func (h *CustomerHandler) GetCustomerByID(c *gin.Context) {
+    id := c.Param("id")
+    customer, err := h.repo.FindByID(id)
+    if err != nil {
+        c.JSON(404, gin.H{"error": "Customer not found"})
         return
     }
-
-    // Add the new customer to the slice.
-    customers = append(customers, newCustomer)
-    c.IndentedJSON(http.StatusCreated, newCustomer)
+    c.JSON(200, customer)
 }
 
-// getCustomerByID locates the customer whose ID value matches the id
-// parameter sent by the client, then returns that customer as a response.
-func getCustomerByID(c *gin.Context) {
-    id := c.Param("id")
-
-    // Loop through the list of customers, looking for
-    // a customer whose ID value matches the parameter.
-    for _, a := range customers {
-        if a.ID == id {
-            c.IndentedJSON(http.StatusOK, a)
-            return
-        }
+func (h *CustomerHandler) CreateCustomer(c *gin.Context) {
+    var customer domain.Customer
+    if err := c.BindJSON(&customer); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
     }
-    c.IndentedJSON(http.StatusNotFound, gin.H{"message": "customer not found"})
+    
+    err := h.repo.Create(customer)
+    if err != nil {
+        c.JSON(500, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(201, customer)
 }
